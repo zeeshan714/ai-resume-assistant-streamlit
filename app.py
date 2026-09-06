@@ -1,6 +1,7 @@
 import streamlit as st
 import google.generativeai as genai
 import pypdf
+from fpdf import FPDF
 
 # Page Configuration
 st.set_page_config(page_title="AI Resume Assistant", page_icon="📄", layout="wide")
@@ -58,6 +59,18 @@ def generate_ai_response(prompt_text):
 
     raise last_error
 
+def create_pdf(text):
+    """Encodes text and outputs clean PDF bytes."""
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=11)
+    
+    # Handle UTF-8 encoding safely for FPDF
+    clean_text = text.encode('latin-1', 'replace').decode('latin-1')
+    pdf.multi_cell(0, 8, clean_text)
+    
+    return bytes(pdf.output())
+
 if analyze_btn:
     if not api_key:
         st.error("Please enter a valid Gemini API Key in the sidebar.")
@@ -106,12 +119,26 @@ if improve_btn:
                 st.subheader("📝 Improved Resume")
                 st.write(improved_text)
                 
-                # Download Options
-                st.download_button(
-                    label="📥 Download as TXT",
-                    data=improved_text,
-                    file_name="improved_resume.txt",
-                    mime="text/plain"
-                )
+                # Generate PDF Bytes
+                pdf_data = create_pdf(improved_text)
+                
+                # Download Options in two columns
+                d_col1, d_col2 = st.columns(2)
+                
+                with d_col1:
+                    st.download_button(
+                        label="📥 Download as TXT",
+                        data=improved_text,
+                        file_name="improved_resume.txt",
+                        mime="text/plain"
+                    )
+                
+                with d_col2:
+                    st.download_button(
+                        label="📄 Download as PDF",
+                        data=pdf_data,
+                        file_name="improved_resume.pdf",
+                        mime="application/pdf"
+                    )
             except Exception as e:
                 st.error(f"Error during API call: {e}")
