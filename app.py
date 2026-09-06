@@ -44,8 +44,8 @@ with col1:
 with col2:
     improve_btn = st.button("✨ Generate Improved Resume")
 
-# Model configuration
-model = genai.GenerativeModel('gemini-1.5-flash')
+# Model configuration using updated model string
+model = genai.GenerativeModel('gemini-1.5-flash-latest')
 
 if analyze_btn:
     if not api_key:
