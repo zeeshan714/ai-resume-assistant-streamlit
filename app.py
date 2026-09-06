@@ -44,20 +44,19 @@ with col1:
 with col2:
     improve_btn = st.button("✨ Generate Improved Resume")
 
-def get_model():
-    """Dynamically finds an available generateContent model from Google AI API."""
+def get_active_model():
+    """Dynamically picks the first available generateContent model from Google API."""
     try:
-        available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-        # Prefer gemini-2.0-flash or gemini-1.5-flash if available
-        for target in ['models/gemini-2.0-flash', 'models/gemini-1.5-flash', 'models/gemini-1.5-flash-latest', 'models/gemini-1.5-pro']:
-            if target in available_models:
-                return genai.GenerativeModel(target)
-        # Fallback to first available model
-        if available_models:
-            return genai.GenerativeModel(available_models[0])
-    except Exception:
-        pass
-    return genai.GenerativeModel('gemini-1.5-flash-latest')
+        models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+        if models:
+            # First try finding any flash model, else take the first valid model
+            flash_models = [m for m in models if 'flash' in m]
+            selected_model = flash_models[0] if flash_models else models[0]
+            return genai.GenerativeModel(selected_model)
+    except Exception as e:
+        st.error(f"Error fetching models: {e}")
+    # Default fallback
+    return genai.GenerativeModel('gemini-1.5-flash')
 
 if analyze_btn:
     if not api_key:
@@ -67,7 +66,7 @@ if analyze_btn:
     else:
         with st.spinner("Analyzing resume..."):
             try:
-                model = get_model()
+                model = get_active_model()
                 prompt = f"""
                 You are an expert ATS (Applicant Tracking System) scanner. 
                 Analyze the following resume against the job description (if provided).
@@ -97,7 +96,7 @@ if improve_btn:
     else:
         with st.spinner("Rewriting & improving resume..."):
             try:
-                model = get_model()
+                model = get_active_model()
                 prompt = f"""
                 You are a professional resume writer. Rewrite and improve the following resume to make it professional, ATS-friendly, and impact-driven using strong action verbs.
                 
@@ -119,3 +118,4 @@ if improve_btn:
                 )
             except Exception as e:
                 st.error(f"Error during API call: {e}")
+                
