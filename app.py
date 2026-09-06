@@ -42,6 +42,22 @@ with col1:
 with col2:
     improve_btn = st.button("✨ Generate Improved Resume")
 
+def generate_ai_response(prompt_text):
+    """Fallback mechanism for multiple Gemini model names."""
+    models_to_try = ['gemini-3.6-flash', 'gemini-1.5-flash', 'gemini-1.5-pro']
+    last_error = None
+
+    for model_name in models_to_try:
+        try:
+            model = genai.GenerativeModel(model_name)
+            response = model.generate_content(prompt_text)
+            return response.text
+        except Exception as e:
+            last_error = e
+            continue
+
+    raise last_error
+
 if analyze_btn:
     if not api_key:
         st.error("Please enter a valid Gemini API Key in the sidebar.")
@@ -50,8 +66,6 @@ if analyze_btn:
     else:
         with st.spinner("Analyzing resume..."):
             try:
-                # Stable Gemini Model
-                model = genai.GenerativeModel('gemini-2.0-flash')
                 prompt = f"""
                 You are an expert ATS (Applicant Tracking System) scanner. 
                 Analyze the following resume against the job description (if provided).
@@ -67,9 +81,9 @@ if analyze_btn:
                 Job Description:
                 {job_description if job_description else 'N/A'}
                 """
-                response = model.generate_content(prompt)
+                output = generate_ai_response(prompt)
                 st.subheader("📊 Analysis Results")
-                st.write(response.text)
+                st.write(output)
             except Exception as e:
                 st.error(f"Error during API call: {e}")
 
@@ -81,15 +95,13 @@ if improve_btn:
     else:
         with st.spinner("Rewriting & improving resume..."):
             try:
-                model = genai.GenerativeModel('gemini-2.0-flash')
                 prompt = f"""
                 You are a professional resume writer. Rewrite and improve the following resume to make it professional, ATS-friendly, and impact-driven using strong action verbs.
                 
                 Resume:
                 {resume_text}
                 """
-                response = model.generate_content(prompt)
-                improved_text = response.text
+                improved_text = generate_ai_response(prompt)
                 
                 st.subheader("📝 Improved Resume")
                 st.write(improved_text)
