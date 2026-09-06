@@ -44,11 +44,21 @@ with col2:
     improve_btn = st.button("✨ Generate Improved Resume")
 
 def generate_ai_response(prompt_text):
-    """Fallback mechanism for multiple Gemini model names."""
-    models_to_try = ['gemini-3.6-flash', 'gemini-1.5-flash', 'gemini-1.5-pro']
-    last_error = None
+    """Dynamically retrieves and uses the first working model for generateContent."""
+    available_models = []
+    try:
+        for m in genai.list_models():
+            if 'generateContent' in m.supported_generation_methods:
+                available_models.append(m.name)
+    except Exception as e:
+        st.error(f"Error listing models: {e}")
 
-    for model_name in models_to_try:
+    if not available_models:
+        raise Exception("No text generation models available for this API Key.")
+
+    # Try all dynamically discovered models
+    last_error = None
+    for model_name in available_models:
         try:
             model = genai.GenerativeModel(model_name)
             response = model.generate_content(prompt_text)
@@ -65,7 +75,6 @@ def create_pdf(text):
     pdf.add_page()
     pdf.set_font("Arial", size=11)
     
-    # Handle UTF-8 encoding safely for FPDF
     clean_text = text.encode('latin-1', 'replace').decode('latin-1')
     pdf.multi_cell(0, 8, clean_text)
     
