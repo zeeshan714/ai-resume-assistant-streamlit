@@ -5,7 +5,7 @@ from fpdf import FPDF
 import io
 
 # Page Configuration
-st.set_page_config(page_title="AI Resume Assistant", page_page_icon="📄", layout="wide")
+st.set_page_config(page_title="AI Resume Assistant", page_icon="📄", layout="wide")
 
 st.title("📄 AI Resume Assistant & ATS Analyzer")
 st.write("Upload your resume and analyze it against job descriptions or get AI-powered improvements.")
