@@ -44,6 +44,16 @@ with col1:
 with col2:
     improve_btn = st.button("✨ Generate Improved Resume")
 
+def get_working_model():
+    # Try preferred models in order of availability
+    candidate_models = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro']
+    for m in candidate_models:
+        try:
+            return genai.GenerativeModel(m)
+        except Exception:
+            continue
+    return genai.GenerativeModel('gemini-1.5-flash')
+
 if analyze_btn:
     if not api_key:
         st.error("Please enter a valid Gemini API Key in the sidebar.")
@@ -52,8 +62,7 @@ if analyze_btn:
     else:
         with st.spinner("Analyzing resume..."):
             try:
-                # Updated to gemini-2.0-flash
-                model = genai.GenerativeModel('gemini-2.0-flash')
+                model = get_working_model()
                 prompt = f"""
                 You are an expert ATS (Applicant Tracking System) scanner. 
                 Analyze the following resume against the job description (if provided).
@@ -73,14 +82,7 @@ if analyze_btn:
                 st.subheader("📊 Analysis Results")
                 st.write(response.text)
             except Exception as e:
-                # Fallback to gemini-1.5-flash-8b if 2.0 fails
-                try:
-                    model = genai.GenerativeModel('gemini-1.5-flash-8b')
-                    response = model.generate_content(prompt)
-                    st.subheader("📊 Analysis Results")
-                    st.write(response.text)
-                except Exception as ex:
-                    st.error(f"Error during API call: {ex}")
+                st.error(f"Error during API call: {e}")
 
 if improve_btn:
     if not api_key:
@@ -90,7 +92,7 @@ if improve_btn:
     else:
         with st.spinner("Rewriting & improving resume..."):
             try:
-                model = genai.GenerativeModel('gemini-2.0-flash')
+                model = get_working_model()
                 prompt = f"""
                 You are a professional resume writer. Rewrite and improve the following resume to make it professional, ATS-friendly, and impact-driven using strong action verbs.
                 
@@ -111,10 +113,4 @@ if improve_btn:
                     mime="text/plain"
                 )
             except Exception as e:
-                try:
-                    model = genai.GenerativeModel('gemini-1.5-flash-8b')
-                    response = model.generate_content(prompt)
-                    st.subheader("📝 Improved Resume")
-                    st.write(response.text)
-                except Exception as ex:
-                    st.error(f"Error during API call: {ex}")
+                st.error(f"Error during API call: {e}")
