@@ -44,15 +44,20 @@ with col1:
 with col2:
     improve_btn = st.button("✨ Generate Improved Resume")
 
-def get_working_model():
-    # Try preferred models in order of availability
-    candidate_models = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro']
-    for m in candidate_models:
-        try:
-            return genai.GenerativeModel(m)
-        except Exception:
-            continue
-    return genai.GenerativeModel('gemini-1.5-flash')
+def get_model():
+    """Dynamically finds an available generateContent model from Google AI API."""
+    try:
+        available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+        # Prefer gemini-2.0-flash or gemini-1.5-flash if available
+        for target in ['models/gemini-2.0-flash', 'models/gemini-1.5-flash', 'models/gemini-1.5-flash-latest', 'models/gemini-1.5-pro']:
+            if target in available_models:
+                return genai.GenerativeModel(target)
+        # Fallback to first available model
+        if available_models:
+            return genai.GenerativeModel(available_models[0])
+    except Exception:
+        pass
+    return genai.GenerativeModel('gemini-1.5-flash-latest')
 
 if analyze_btn:
     if not api_key:
@@ -62,7 +67,7 @@ if analyze_btn:
     else:
         with st.spinner("Analyzing resume..."):
             try:
-                model = get_working_model()
+                model = get_model()
                 prompt = f"""
                 You are an expert ATS (Applicant Tracking System) scanner. 
                 Analyze the following resume against the job description (if provided).
@@ -92,7 +97,7 @@ if improve_btn:
     else:
         with st.spinner("Rewriting & improving resume..."):
             try:
-                model = get_working_model()
+                model = get_model()
                 prompt = f"""
                 You are a professional resume writer. Rewrite and improve the following resume to make it professional, ATS-friendly, and impact-driven using strong action verbs.
                 
